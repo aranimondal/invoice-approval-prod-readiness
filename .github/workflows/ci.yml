@@ -15,4 +15,14 @@ jobs:
         with:
           dotnet-version: '8.0.x'
       - run: dotnet build backend/InvoiceApp.sln --configuration Release
-      - run: dotnet test backend/InvoiceApp.sln --configuration Release --no-build
+
+      # Structural rules get their own step so a violation is visible in the PR checks
+      # rather than buried in the unit-test count. See docs/architecture/as-built.md.
+      - name: Architecture rules
+        run: dotnet test backend/InvoiceApp.sln --configuration Release --no-build --filter "FullyQualifiedName~ArchitectureTests"
+
+      - name: Unit tests
+        run: dotnet test backend/InvoiceApp.sln --configuration Release --no-build --filter "FullyQualifiedName!~ArchitectureTests"
+
+      - name: CI baseline numbers
+        run: python3 scripts/metrics/ci_baseline.py ops/pipeline/run-timings.csv
