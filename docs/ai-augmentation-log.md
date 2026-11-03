@@ -29,6 +29,9 @@ Details are in [as-built.md](architecture/as-built.md).
 
 ## 2. Architecture test
 
+> The service has since been ported to Java 21 + Spring Boot (section 6). This section describes the original .NET test. Its Java successor is `DomainArchitectureTest` (ArchUnit).
+
+
 The agent drafted `ArchitectureTests.cs` from my rule statement ("Domain must not reference web, storage or transport code"). I chose reflection over `GetReferencedAssemblies()` instead of adding NetArchTest, to keep the test project free of new packages. I also added the namespace check. To prove the test fails when it should, I pushed a deliberate violation to the feature branch and watched CI go red (see the PR).
 
 ## 3. ADR-001 stress test {#adr-001-stress-test}
@@ -57,6 +60,26 @@ All four prompts went to fresh Sonnet sub-sessions. The context paragraph (platf
 - **Autonomy policy:** the agent drafted the structure (levels table, controls, promotion evidence). I chose dependency bumps, because of the 2.15.1 bundling evidence. I set the day-one level and wrote the reasoning about the two new engineers.
 - **Risk audit:** the agent pointed out that `ops/README.md` in this copy has no "agent setup" section. I decided to audit the setup the repo actually configures rather than invent one. The agent checked the Playwright MCP docs, which is where the "origin filter is not a security boundary" warning comes from, and the npm registry for the current version to pin.
 - **Measurement plan:** the agent wrote `ci_baseline.py`. I checked its output by hand against the CSV for the six lead-time pairs and the 20 durations. The two findings about deploys going out before main CI and about direct pushes to main came out of that hand check.
+
+## 6. Port to Java 21 + Spring Boot
+
+**Why:** the team that owns the rotation works in Java, Spring Boot and Quarkus. The reasoning, and the counter-argument, are in [ADR-002](decisions/ADR-002-java-spring-boot-port.md).
+
+**What the agent did:** wrote the two Maven modules, the ArchUnit rule, the MockMvc contract test and the Maven wrapper. It then ran the full build locally on JDK 21: 18 tests green (10 contract, 7 domain, 1 architecture). It also started the jar and drove it with curl: sign in, list, approve.
+
+**What I decided:**
+
+- **Keep the double-approve race.** The port is behaviour-preserving, so the as-built analysis still holds.
+- **Use an allow-list rule, not a deny-list.**
+- **Leave the eval cases in C#.** Translating them would change the benchmark.
+- **Show the AWS mapping alongside the Azure design**, instead of re-platforming the scenario.
+
+**Verified, not assumed:**
+
+- The ArchUnit rule fails on a `java.net.http.HttpClient` field in `ApprovalService`. It reported two violations, which is the case the Maven module boundary can't catch.
+- The unchanged `app.js` works against the Java API: same routes, same JSON field names, the same 401 behaviour that signs the user out.
+
+**Diagrams:** rendered to SVG with mermaid-cli. That also syntax-checks the Mermaid, which GitHub otherwise only reports as a render error.
 
 ## What I'd tell the next person about using the agent here
 

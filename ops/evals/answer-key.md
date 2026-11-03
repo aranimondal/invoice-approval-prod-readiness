@@ -1,6 +1,6 @@
 # My answer key for the review eval
 
-The README says which cases contain defects is deliberately left unrecorded. These are my own labels, made by reading each diff against the real code before I looked at any review output. If the facilitator's key disagrees, the rates in [RESULTS.md](RESULTS.md) move. I've noted the one case where a different label would change the headline number.
+The README says which cases contain defects is deliberately left unrecorded. These are my own labels, made by reading each diff against the real code before I looked at any review output. The real code here means the workshop's original .NET implementation: the eval diffs target it, and it's preserved in the baseline commit on `main`. The service has since been ported to Java ([ADR-002](../../docs/decisions/ADR-002-java-spring-boot-port.md)), but the eval set deliberately stays as it was. If the facilitator's key disagrees, the rates in [RESULTS.md](RESULTS.md) move. I've noted the one case where a different label would change the headline number.
 
 | Case | Label | The defect, or why it's clean |
 | --- | --- | --- |

@@ -7,7 +7,7 @@ Raw rows: [`results.csv`](results.csv). Labels and scoring rules: [`answer-key.m
 - **Reviewer:** Claude Sonnet, run as a fresh sub-agent session for every single case. That makes 48 independent sessions, with no context carried between cases.
 - **Prompt v1:** the review prompt from `ops/evals/README.md`, word for word. In front of it I put one line, "Do not use any tools. Answer from the text below only.", so the reviewer couldn't go and fetch the repository. That deviates from "nothing else" in the README, and I'm stating it openly. It's a constant across all four runs, so it doesn't affect the comparison.
 - **Runs 1–3:** v1, diff only.
-- **Run 4, the one change:** the same prompt and model, with the project's AGENTS.md conventions pasted in front of the diff as a context file.
+- **Run 4, the one change:** the same prompt and model, with the project's AGENTS.md conventions pasted in front of the diff as a context file. That was the original .NET-era AGENTS.md, which matches the language of the diffs. The current AGENTS.md describes the Java port.
 
 ## Results
 
