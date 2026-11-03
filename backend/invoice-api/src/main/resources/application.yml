@@ -1,0 +1,24 @@
+server:
+  port: 5000
+
+spring:
+  application:
+    name: invoice-approval
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+
+logging:
+  level:
+    root: INFO
+    org.springframework.web: WARN
+
+# Demo accounts for a local, in-memory app. Not real credentials.
+demo:
+  users:
+    - username: demo.approver
+      password: ChangeMe123!
+      role: Approver
+    - username: demo.admin
+      password: ChangeMe123!
+      role: Admin
