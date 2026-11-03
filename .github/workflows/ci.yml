@@ -30,3 +30,7 @@ jobs:
 
       - name: Unit and API contract tests
         run: ./mvnw -B verify
+
+      - name: Diagrams match their .mmd sources
+        working-directory: .
+        run: python3 scripts/diagrams/sync_diagrams.py --check
