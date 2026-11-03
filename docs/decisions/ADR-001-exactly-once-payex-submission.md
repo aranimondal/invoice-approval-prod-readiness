@@ -78,7 +78,7 @@ Build **option B** with these specifics:
    - A row whose lease has expired goes back through the `Unknown` path, never straight to `Pending`.
    - That means an instance recycle mid-send can't cause a blind re-send. (INC-2041 shows routine host recycles: web-03 at 10:03.)
 5. **Circuit breaker on PayEx-wide failures.** A 401, or more than 50% timeouts over 2 minutes, pauses the dispatcher and pages on-call. It doesn't burn through per-row retries. A key rotation (PayEx key rotated on 23 January in the change log) shouldn't turn 4,000 invoices into 4,000 parked rows.
-6. **The PayEx client is a typed `HttpClient` from `AddHttpClient`** with a 25 s timeout, under PayEx's 30 s, so we give up before they do. Concurrency is capped at 4 sends per instance.
+6. **The PayEx client is a Spring `RestClient` over one shared, pooled JDK `HttpClient` bean**, with a 5 s connect timeout and a 25 s read timeout. That's under PayEx's 30 s, so we give up before they do. Never `HttpClient.newHttpClient()` per call: that's the Java spelling of the INC-2041 bug, and the ArchUnit rule keeps HTTP out of the domain altogether. Concurrency is capped at 4 sends per instance.
 7. **Reconciliation:**
    - hourly during the last three working days, daily otherwise;
    - it reports mismatches and **never** sends anything;
@@ -137,7 +137,7 @@ Running cost is small in money and real in operations:
 
 - Approval and payment become two visible steps. The UI has to say "approved, payment queued", and support needs to know a lag of a few minutes at month-end is normal.
 - We own a small state machine. It needs a runbook with safe, copy-pasteable SQL for the three things on-call will do: requeue `Unknown` after a manual PayEx check, release an expired lease, and pause or resume the dispatcher.
-- The domain gains a `PaymentSubmission` concept and an `IUnitOfWork` port. The architecture test keeps SQL out of it.
+- The domain gains a `PaymentSubmission` concept and a `UnitOfWork` port. `invoice-api` implements it with Spring's `TransactionTemplate`, and the ArchUnit rule keeps SQL and Spring out of the domain.
 
 ## What would make me revisit this
 

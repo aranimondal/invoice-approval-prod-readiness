@@ -1,6 +1,6 @@
 # Autonomy policy: dependency bumps
 
-**Scope:** NuGet packages in `backend/` and npm packages in `e2e/` for the Invoice Approval service.
+**Scope:** Maven dependencies and plugins in `backend/` and npm packages in `e2e/` for the Invoice Approval service.
 **Owner:** service owner. **Reviewed:** every quarter, or after any incident a dependency change contributed to.
 
 I picked dependency bumps over log triage or incident summaries because it's the workflow where an agent's output goes straight to production, and where we already have evidence of it going wrong. Release 2.15.1 shipped "four patch-level package upgrades" in the same release as the event-schema rename that caused INC-2047. Because of that bundling, the INC-2047 pack warns that "a rollback affects everything else in the release". The bumps themselves were probably fine. Bundling them with a feature change is what made the incident harder to get out of.
@@ -19,16 +19,16 @@ I picked dependency bumps over log triage or incident summaries because it's the
 
 | Task | Level today | Why |
 | --- | --- | --- |
-| Scan for outdated or vulnerable packages (`dotnet list package --vulnerable --include-transitive`, `npm audit`) and post a weekly summary | L3 | Read-only, no production impact |
-| Patch bumps of test-only packages (`xunit`, `coverlet.collector`, `Microsoft.NET.Test.Sdk`, `@playwright/test`) | L2 | CI alone fully proves these. First candidate for L3 |
-| Patch bumps of runtime packages (`Microsoft.AspNetCore.*`, `Azure.*`, `Microsoft.Data.SqlClient`) | L2 | Reach production. Need a reviewer who knows the runtime path |
+| Scan for outdated or vulnerable packages (`./backend/mvnw -f backend/pom.xml versions:display-dependency-updates`, OWASP `dependency-check`, `npm audit`) and post a weekly summary | L3 | Read-only, no production impact |
+| Patch bumps of test-only packages (`junit-jupiter`, `assertj-core`, `archunit-junit5`, `maven-surefire-plugin`, `@playwright/test`) | L2 | CI alone fully proves these. First candidate for L3 |
+| Patch bumps of runtime packages (the Spring Boot BOM, `com.azure:*` / `software.amazon.awssdk:*`, the JDBC driver) | L2 | Reach production. Need a reviewer who knows the runtime path |
 | Minor-version bumps of runtime packages | L2, reviewer must be one of the four engineers who've been on the codebase longest | Behaviour changes ship in minors more often than people expect |
 | Major bumps, or anything touching auth, serialization, HTTP client handling, or the SQL client | L1 | The agent writes the upgrade note and a human does the work. INC-2041 started with an HTTP client change |
 | Critical CVE fix during the month-end window | L1, and the incident commander decides | Fixing a CVE during freeze is a risk call, and a risk call isn't the agent's to make |
 
 ## Controls that make those levels safe
 
-1. **One dependency family per PR, and nothing else in it.** A CI check fails the PR if it touches files other than `*.csproj`, `Directory.Packages.props`, `package.json` and `package-lock.json`. That's the direct lesson from 2.15.1.
+1. **One dependency family per PR, and nothing else in it.** A CI check fails the PR if it touches files other than `pom.xml` files, `.mvn/wrapper/maven-wrapper.properties`, `package.json` and `package-lock.json`. That's the direct lesson from 2.15.1.
 2. **The full pipeline is required:** build, unit, integration, the architecture test, secret scan, vulnerability scan, container scan and end-to-end. No skipped stages on bot PRs, even though the pipeline takes about 31 minutes (median of the last 20 runs, see the [baseline](../measurement/baseline-plan.md)).
 3. **The PR description is mandatory:** old → new version, a link to the release notes, any transitive packages that changed, and a one-line "what could break". If the agent can't fill one of these in, the PR stays a draft.
 4. **The agent's token is scoped to this repo.** It gets contents write on non-default branches and pull-request write. No `workflow` scope, so it can't edit CI, and no admin. Branch protection on `main` applies to the bot like anyone else.

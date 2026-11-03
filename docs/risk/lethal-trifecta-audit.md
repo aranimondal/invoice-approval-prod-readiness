@@ -4,7 +4,7 @@
 
 The brief asks me to audit "the agent setup described at the end of `ops/README.md`". In the copy of the repository I worked from (commit `0616158`), `ops/README.md` ends at "No answers here" and has no section describing an agent setup. Rather than invent one, I audited the setup this repository actually configures, plus the way this team would use it on the rotation:
 
-- **A coding agent in the repo**, reading `AGENTS.md` and `CLAUDE.md` (`CLAUDE.md` just includes `AGENTS.md`), with shell access so it can run `dotnet` and `npm`.
+- **A coding agent in the repo**, reading `AGENTS.md` and `CLAUDE.md` (`CLAUDE.md` just includes `AGENTS.md`), with shell access so it can run `./backend/mvnw` and `npm`.
 - **Playwright MCP** from `.mcp.json`. As shipped, it's `npx @playwright/mcp@latest` with no other arguments: an unpinned version, and a browser that may go to any URL.
 - **Read access to `ops/`**: incident logs, Service Bus inspection output, deploy diffs. The agent reads these for triage and the incident summaries.
 - **Git and GitHub credentials** in the developer's environment, so the agent can push branches and open PRs. That's how a dependency-bump workflow would run (see the [autonomy policy](../policies/autonomy-policy-dependency-bumps.md)).
@@ -15,7 +15,7 @@ If the facilitator's version of `ops/README.md` describes a different setup, the
 
 | Leg | Present? | Evidence |
 | --- | --- | --- |
-| **Access to private data** | **Yes** | `ops/incidents/INC-2047/worker-logs.txt` has supplier email addresses (`ap@harlowfreight.example`, …). `servicebus-status.txt` has invoice amounts and approver names. `appsettings.json` has the demo credentials. In production, `appsettings.Production.json` gets the PayEx API key (deploy diff). The developer's GitHub token is in the same shell. |
+| **Access to private data** | **Yes** | `ops/incidents/INC-2047/worker-logs.txt` has supplier email addresses (`ap@harlowfreight.example`, …). `servicebus-status.txt` has invoice amounts and approver names. `application.yml` has the demo credentials. In production, `appsettings.Production.json` gets the PayEx API key (deploy diff). The developer's GitHub token is in the same shell. |
 | **Exposure to untrusted content** | **Yes** | Log lines carry text that outsiders control: customer names, rejection reasons typed by users, supplier email fields. PR diffs can come from forks; the upstream repo has 9 forks and an open PR from one. Any page the Playwright browser loads is untrusted. Dependency release notes are untrusted text the bump workflow reads by design. |
 | **Ability to exfiltrate** | **Yes** | Playwright MCP can navigate to any origin, and a GET with data in the query string is enough. The shell can `curl`. `git push` and `gh` can publish anything to any repository the token can reach. |
 
