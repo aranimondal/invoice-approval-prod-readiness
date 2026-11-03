@@ -11,7 +11,7 @@ export default defineConfig({
   },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
   webServer: {
-    command: 'dotnet run --project ../backend/src/InvoiceApp.Api',
+    command: 'cd ../backend && ./mvnw -q install -DskipTests && ./mvnw -q -pl invoice-api spring-boot:run',
     url: 'http://localhost:5000',
     reuseExistingServer: true,
     timeout: 120_000,
