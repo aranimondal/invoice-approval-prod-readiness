@@ -34,3 +34,7 @@ jobs:
       - name: Diagrams match their .mmd sources
         working-directory: .
         run: python3 scripts/diagrams/sync_diagrams.py --check
+
+      - name: CI baseline numbers
+        working-directory: .
+        run: python3 scripts/metrics/ci_baseline.py ops/pipeline/run-timings.csv
