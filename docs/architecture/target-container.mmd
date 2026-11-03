@@ -1,0 +1,37 @@
+%% Target container view once persistence and PayEx are in.
+%% Dashed borders (class "planned") = DOES NOT EXIST YET in the code.
+flowchart LR
+    user["Approver / Admin<br/>(browser)"]
+    payex["PayEx API<br/>external, 30 s timeout"]:::external
+
+    subgraph app["Azure App Service — 3 instances"]
+        direction TB
+        ui["Static UI (exists)"]
+        api["API: controllers + auth (exists)<br/>Entra ID sign-in replaces demo users (NEW)"]
+        domain["InvoiceApp.Domain<br/>ApprovalService (exists)<br/>+ PaymentSubmission (NEW)"]
+        disp["PayExDispatcher<br/>BackgroundService, lease-based (NEW)"]:::planned
+        payexc["PayExClient<br/>typed HttpClient, idempotency key (NEW)"]:::planned
+        recon["ReconciliationJob<br/>hourly in month-end window, else daily (NEW)"]:::planned
+    end
+
+    subgraph sql["Azure SQL (NEW)"]
+        inv[("Invoices<br/>rowversion")]:::planned
+        outbox[("PaymentOutbox<br/>unique(invoice_id, approval_version)")]:::planned
+        audit[("ApprovalAudit<br/>append-only, 7-year retention")]:::planned
+    end
+
+    sb[["Azure Service Bus<br/>provisioned, NOT used in v1"]]:::unused
+
+    user --> ui --> api --> domain
+    domain -->|"one transaction:<br/>invoice + outbox row + audit row"| sql
+    disp -->|"claim with lease<br/>UPDLOCK, READPAST"| outbox
+    disp --> payexc -->|"POST /v2/payments<br/>Idempotency-Key"| payex
+    payexc -->|"on Unknown: GET by merchant reference"| payex
+    disp -->|"Sent / Unknown / Parked + attempt rows"| sql
+    recon -->|"list PayEx payments vs Sent rows"| payex
+    recon -->|"mismatch report, never re-sends"| sql
+    outbox -. "later, if a 2nd consumer appears (ADR-001 revisit)" .-> sb
+
+    classDef planned stroke-dasharray: 5 5,stroke:#b45309,color:#7c2d12;
+    classDef external fill:#f3f4f6,stroke:#374151;
+    classDef unused stroke-dasharray: 2 4,stroke:#9ca3af,color:#6b7280;

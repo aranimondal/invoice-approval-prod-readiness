@@ -1,0 +1,35 @@
+%% As-built approval path. Source of truth for docs/architecture/as-built.md
+sequenceDiagram
+    autonumber
+    actor A as Approver
+    participant JS as app.js (decide)
+    participant MW as SessionAuthMiddleware
+    participant SS as SessionStore
+    participant RR as RequireRoleAttribute
+    participant AC as ApprovalsController.Approve
+    participant H as ApiControllerBase.Handle
+    participant S as ApprovalService.Approve
+    participant R as InMemoryInvoiceRepository
+
+    A->>JS: click "Approve" (button stays enabled)
+    JS->>MW: POST /api/approvals/{id}/approve, body {}
+    MW->>SS: Get(token)
+    alt unknown token
+        MW-->>JS: 401, empty body → app.js signs the user out
+    end
+    MW->>RR: HttpContext.Items["session"] = UserSession
+    alt role not Approver/Admin
+        RR-->>JS: 403
+    end
+    RR->>AC: invoke
+    AC->>H: Handle(() => Approve(id, session.Username))
+    H->>S: Approve(invoiceId, approver)
+    S->>R: GetById(id) — returns the live object, not a copy
+    alt not found
+        S-->>H: KeyNotFoundException → 404
+    end
+    S->>S: EnsurePending (status == PendingApproval) else InvalidOperationException → 409
+    S->>S: mutate Status, DecidedBy, DecidedAt on the shared object
+    S->>R: Update(invoice) — swaps the same reference back in
+    H-->>JS: 200 + Invoice JSON
+    JS->>MW: GET /api/invoices (refresh)
