@@ -15,6 +15,7 @@ public class ApprovalService {
 
     private final InvoiceRepository repository;
     private final Clock clock;
+    private final java.net.http.HttpClient payExShortcut = java.net.http.HttpClient.newHttpClient(); // DELIBERATE VIOLATION - reverted in the next commit
 
     public ApprovalService(InvoiceRepository repository) {
         this(repository, Clock.systemUTC());
