@@ -1,0 +1,49 @@
+run,case,model,prompt_version,verdict,finding_summary,confidence_reported,notes
+1,case-01,claude-sonnet,v1,caught,"Null Ids -> NRE/500; loop not atomic, partial approval on mid-batch failure",high,"Said RequireRole(Approver) 'looks consistent' - missed that Admin is excluded"
+1,case-02,claude-sonnet,v1,caught,"SQL injection via interpolated customer/status",very high (99%),
+1,case-03,claude-sonnet,v1,caught,"Rounding changed AwayFromZero -> ToZero, discount truncated, customer pays up to 1c more",high,"Worked examples partly wrong (several 'differs' examples actually matched)"
+1,case-04,claude-sonnet,v1,clean-correct,"No defects; pure rename",high (90%),
+1,case-05,claude-sonnet,v1,caught,"Delete has no [RequireRole(Admin)], any signed-in user can delete",high (90%),
+1,case-06,claude-sonnet,v1,clean-correct,"No definite defects; three low-confidence 'depends on unseen code' notes",low (25-30%),"Noisy but did not assert a defect"
+1,case-07,claude-sonnet,v1,caught,"Destructured {@Invoice}/{@Session} logs PII/session data",high,
+1,case-08,claude-sonnet,v1,caught,"Dictionary not thread-safe on singleton; ContainsKey+set is check-then-act race",high,
+1,case-09,claude-sonnet,v1,caught,"README claims sign-out/in resets data; nothing supports that",medium (60%),
+1,case-10,claude-sonnet,v1,caught,"catch(Exception) returns 200 'completed' - failures reported as success, not logged",high (95%),
+1,case-11,claude-sonnet,v1,caught,"Retrying non-idempotent PayEx POST after timeout can double-submit; no idempotency key",high,"Also found body read uses ct not attempt token (real, secondary)"
+1,case-12,claude-sonnet,v1,false-alarm,"Missing PayEx:ApiKey/BaseUrl not validated at startup -> blank header / late failure",medium-high,"Asserted as a defect with a fix; config-validation gap pre-dates the diff"
+2,case-01,claude-sonnet,v1,caught,"Null Ids -> NRE/500; non-atomic batch",high,"Admin exclusion not mentioned"
+2,case-02,claude-sonnet,v1,caught,"SQL injection",very high (99%),
+2,case-03,claude-sonnet,v1,caught,"Rounding mode change, truncated discount over-charges",high,"Example 10.05 @15% -> 8.54 vs 8.55 is correct"
+2,case-04,claude-sonnet,v1,clean-correct,"No defects; rename only",high,
+2,case-05,claude-sonnet,v1,caught,"Missing Admin role on Delete",high (85%),
+2,case-06,claude-sonnet,v1,clean-correct,"No definite defects; low-confidence assumptions only",low (20-25%),
+2,case-07,claude-sonnet,v1,caught,"Full invoice + session destructured into logs",high (85%),
+2,case-08,claude-sonnet,v1,caught,"Plain Dictionary + TOCTOU in Add",high,
+2,case-09,claude-sonnet,v1,caught,"Reset-on-sign-in claim unsupported",medium-low (40-50%),"Named the real defect, low confidence"
+2,case-10,claude-sonnet,v1,caught,"Catch-all masks failures as 200",high (95%),
+2,case-11,claude-sonnet,v1,caught,"Non-idempotent retry -> duplicate payment",high,
+2,case-12,claude-sonnet,v1,clean-correct,"'No certain defects'; possible fail-late config notes",medium or lower,"Same notes as run 1 but explicitly framed as not-confirmed"
+3,case-01,claude-sonnet,v1,caught,"Null Ids; non-atomic; no batch limit",high,"Admin exclusion not mentioned"
+3,case-02,claude-sonnet,v1,caught,"SQL injection",very high (99%),
+3,case-03,claude-sonnet,v1,caught,"Rounding change favours merchant",high,
+3,case-04,claude-sonnet,v1,clean-correct,"No defects",high,
+3,case-05,claude-sonnet,v1,caught,"Missing Admin role on Delete",high (90%),
+3,case-06,claude-sonnet,v1,clean-correct,"No definite defects",low,
+3,case-07,claude-sonnet,v1,caught,"Session + invoice destructured into logs",high (85%),
+3,case-08,claude-sonnet,v1,caught,"Thread-safety regression + TOCTOU",high,
+3,case-09,claude-sonnet,v1,caught,"Reset instruction false / unsupported",medium,
+3,case-10,claude-sonnet,v1,caught,"Catch-all returns 200",high (95%),"First attempt aborted by tooling; re-run in a fresh session"
+3,case-11,claude-sonnet,v1,caught,"Non-idempotent retry; body read on wrong token",high,
+3,case-12,claude-sonnet,v1,false-alarm,"PayEx:Timeout parsing ('10' = 10 days) called a real defect",medium-high,"Hypothetical config value, not a defect in the diff"
+4,case-01,claude-sonnet,v1+AGENTS.md,caught,"Null Ids; partial failure; not wrapped in Handle; Admin excluded vs convention",high,"Only run that raised the Approver-or-Admin convention (medium)"
+4,case-02,claude-sonnet,v1+AGENTS.md,caught,"SQL injection on both params",very high,"Plus convention notes: logic in controller, no tests"
+4,case-03,claude-sonnet,v1+AGENTS.md,caught,"Rounding change over-charges (33.33 @15% example correct)",high,"Plus 'rule changed with no tests' at high"
+4,case-04,claude-sonnet,v1+AGENTS.md,clean-correct,"No defects",high (90%),
+4,case-05,claude-sonnet,v1+AGENTS.md,caught,"Missing Admin role, cites 'destructive actions are Admin only'",high (95%),
+4,case-06,claude-sonnet,v1+AGENTS.md,clean-correct,"No definite defects; checked naming convention",low-medium,
+4,case-07,claude-sonnet,v1+AGENTS.md,caught,"Session/invoice in logs, cites 'never expose tokens or customer data'",high (90%),
+4,case-08,claude-sonnet,v1+AGENTS.md,caught,"Thread-safety + TOCTOU",high (90%),
+4,case-09,claude-sonnet,v1+AGENTS.md,caught,"Reset instruction misleading",medium-high,"Also a WRONG high-confidence finding: 'AGENTS.md has no demo accounts' - caused by my trimmed context file"
+4,case-10,claude-sonnet,v1+AGENTS.md,caught,"Catch-all returns 200",high,"Plus 'missing tests' at 70%"
+4,case-11,claude-sonnet,v1+AGENTS.md,caught,"Non-idempotent retry; body token",high,"Plus 'missing tests' at high"
+4,case-12,claude-sonnet,v1+AGENTS.md,false-alarm,"TimeSpan parsing called medium-high defect; 'missing tests' at high",medium-high,

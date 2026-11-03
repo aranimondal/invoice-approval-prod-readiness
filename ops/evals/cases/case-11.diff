@@ -1,0 +1,40 @@
+diff --git a/backend/src/InvoiceApp.Api/Clients/PayExClient.cs b/backend/src/InvoiceApp.Api/Clients/PayExClient.cs
+--- a/backend/src/InvoiceApp.Api/Clients/PayExClient.cs
++++ b/backend/src/InvoiceApp.Api/Clients/PayExClient.cs
+@@ -17,13 +17,32 @@ public class PayExClient : IPayExClient
+         _logger = logger;
+     }
+
+-    public async Task<PayExReceipt> SubmitAsync(Invoice invoice, CancellationToken ct)
++    private const int MaxAttempts = 3;
++    private static readonly TimeSpan AttemptTimeout = TimeSpan.FromSeconds(30);
++
++    public async Task<PayExReceipt> SubmitAsync(Invoice invoice, CancellationToken ct)
+     {
+-        var response = await _http.PostAsJsonAsync("/v2/payments", Map(invoice), ct);
+-        response.EnsureSuccessStatusCode();
+-        return await response.Content.ReadFromJsonAsync<PayExReceipt>(cancellationToken: ct)
+-               ?? throw new InvalidOperationException("PayEx returned an empty receipt.");
++        for (var attempt = 1; ; attempt++)
++        {
++            using var attemptCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
++            attemptCts.CancelAfter(AttemptTimeout);
++
++            try
++            {
++                var response = await _http.PostAsJsonAsync("/v2/payments", Map(invoice), attemptCts.Token);
++                response.EnsureSuccessStatusCode();
++                return await response.Content.ReadFromJsonAsync<PayExReceipt>(cancellationToken: ct)
++                       ?? throw new InvalidOperationException("PayEx returned an empty receipt.");
++            }
++            catch (OperationCanceledException) when (!ct.IsCancellationRequested && attempt < MaxAttempts)
++            {
++                _logger.LogWarning(
++                    "PayEx did not answer within {Timeout} for invoice {InvoiceId}, retrying (attempt {Attempt})",
++                    AttemptTimeout, invoice.Id, attempt);
++                await Task.Delay(TimeSpan.FromSeconds(2 * attempt), ct);
++            }
++        }
+     }
+
+     private static PayExPayment Map(Invoice invoice) => new(

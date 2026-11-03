@@ -1,0 +1,39 @@
+%% Target approval + payment path. Everything from the SQL transaction onwards is NEW (does not exist yet).
+sequenceDiagram
+    autonumber
+    actor A as Approver
+    participant API as ApprovalsController (exists)
+    participant S as ApprovalService (exists, extended)
+    participant DB as Azure SQL (NEW)
+    participant D as PayExDispatcher (NEW)
+    participant P as PayEx (external)
+
+    A->>API: POST /api/approvals/{id}/approve
+    API->>S: Approve(id, approver, expectedRowVersion)
+    S->>DB: BEGIN TRAN
+    S->>DB: UPDATE Invoices SET Status=Approved WHERE Id=@id AND RowVersion=@rv
+    alt 0 rows (someone else decided first)
+        S-->>API: 409 Conflict — no outbox row, no payment
+    end
+    S->>DB: INSERT PaymentOutbox(invoice_id, approval_version, key, state=Pending)
+    S->>DB: INSERT ApprovalAudit(who, what, when, before/after)
+    S->>DB: COMMIT
+    API-->>A: 200 Approved — payment pending (returns in ms, PayEx not on this path)
+
+    loop every 2 s, per instance
+        D->>DB: claim up to 20 Pending/expired-lease rows (UPDLOCK, READPAST), set lease 90 s
+    end
+    D->>P: POST /v2/payments, Idempotency-Key = invoiceId:approvalVersion (25 s client timeout)
+    alt 2xx with reference
+        D->>DB: state=Sent, payex_reference, attempt row
+    else timeout / connection reset
+        D->>DB: state=Unknown, attempt row
+        D->>P: GET /v2/payments?merchantReference=key (next cycle)
+        alt found
+            D->>DB: state=Sent, payex_reference
+        else not found after settle window (5 min)
+            D->>P: re-POST with the SAME key
+        end
+    else 4xx validation error
+        D->>DB: state=Parked, alert finance-ops queue (no retry)
+    end
