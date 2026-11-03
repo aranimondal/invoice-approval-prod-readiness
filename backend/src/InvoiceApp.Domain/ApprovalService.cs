@@ -7,6 +7,7 @@ namespace InvoiceApp.Domain;
 public class ApprovalService
 {
     private readonly IInvoiceRepository _repository;
+    private readonly System.Net.Http.HttpClient _payExShortcut = new(); // DELIBERATE VIOLATION - reverted in the next commit
 
     public ApprovalService(IInvoiceRepository repository)
     {
