@@ -1,27 +1,35 @@
-%% As-built container view. Source of truth for docs/architecture/as-built.md
+%% As-built container view (Java 21 / Spring Boot). Source for docs/architecture/as-built.md.
 %% Every node is cited in the citations table in as-built.md.
 flowchart LR
     user["Approver / Admin<br/>(browser)"]
 
-    subgraph host["One ASP.NET Core 8 process — Program.cs"]
+    subgraph jvm["One JVM — Spring Boot 3 on Java 21, port 5000"]
         direction LR
-        ui["Static UI<br/>wwwroot/index.html + app.js"]
-        mw["SessionAuthMiddleware<br/>bearer token check on /api/*"]
-        ctrl["Controllers<br/>AuthController · InvoicesController · ApprovalsController"]
-        roles["RequireRoleAttribute<br/>action filter, 403"]
-        svc["ApprovalService<br/>(InvoiceApp.Domain)"]
-        repo[("InMemoryInvoiceRepository<br/>List of Invoice + lock, singleton")]
-        sessions[("SessionStore<br/>ConcurrentDictionary, singleton")]
-        cfg["appsettings.json<br/>Users[] → DemoUsersOptions"]
+        subgraph apimod["Maven module invoice-api (adapter)"]
+            ui["Static UI<br/>resources/static: index.html + app.js"]
+            filter["SessionAuthFilter<br/>bearer token on /api/*"]
+            ctrl["web/ controllers<br/>Auth · Invoices · Approvals"]
+            roles["RequireRoleInterceptor<br/>@RequireRole, 403"]
+            advice["ApiExceptionHandler<br/>404 / 409 / 400"]
+            repo[("InMemoryInvoiceRepository<br/>ArrayList + synchronized")]
+            sessions[("SessionStore<br/>ConcurrentHashMap")]
+            cfg["application.yml demo.users<br/>DemoUsersProperties"]
+        end
+        subgraph dommod["Maven module invoice-domain (plain Java, no framework)"]
+            svc["ApprovalService"]
+            port["InvoiceRepository (port)"]
+        end
     end
 
     user -->|HTTP| ui
-    ui -->|"fetch /api/* + Bearer"| mw
-    mw -->|lookup token| sessions
-    mw --> ctrl
+    ui -->|"fetch /api/* + Bearer"| filter
+    filter -->|lookup token| sessions
+    filter --> ctrl
     ctrl --> roles
-    ctrl -->|Submit / Approve / Reject| svc
-    ctrl -->|"GetAll / Create / Delete (direct)"| repo
-    svc -->|GetById / Update| repo
-    ctrl -->|"Login: compare username + password"| cfg
-    ctrl -->|Create / Remove token| sessions
+    ctrl -->|"submit / approve / reject"| svc
+    ctrl -->|"findAll / add / remove (direct)"| port
+    svc --> port
+    port -. implemented by .-> repo
+    ctrl -.->|domain exceptions| advice
+    ctrl -->|"login: compare username + password"| cfg
+    ctrl -->|"create / remove token"| sessions

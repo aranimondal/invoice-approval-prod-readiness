@@ -2,7 +2,7 @@
 
 This is where we want to be by the January go-live. **Anything drawn with a dashed orange border doesn't exist in the code yet.** Solid boxes exist today, sometimes with a small extension that's called out in the label. Service Bus has a grey dotted border: it's provisioned in Azure, and on purpose nothing uses it in v1. [ADR-001](../decisions/ADR-001-exactly-once-payex-submission.md) explains why.
 
-Sources: [`target-container.mmd`](target-container.mmd), [`target-approval-sequence.mmd`](target-approval-sequence.mmd).
+The Mermaid blocks below render on GitHub. The same diagrams are exported as SVG ([container](img/target-container.svg), [sequence](img/target-approval-sequence.svg)), and the editable sources are [`target-container.mmd`](target-container.mmd) and [`target-approval-sequence.mmd`](target-approval-sequence.mmd).
 
 ## Container view
 
@@ -14,10 +14,10 @@ flowchart LR
     subgraph app["Azure App Service — 3 instances"]
         direction TB
         ui["Static UI (exists)"]
-        api["API: controllers + auth (exists)<br/>Entra ID sign-in replaces demo users (NEW)"]
-        domain["InvoiceApp.Domain<br/>ApprovalService (exists)<br/>+ PaymentSubmission (NEW)"]
-        disp["PayExDispatcher<br/>BackgroundService, lease-based (NEW)"]:::planned
-        payexc["PayExClient<br/>typed HttpClient, idempotency key (NEW)"]:::planned
+        api["invoice-api: Spring Boot controllers + auth (exists)<br/>Entra ID / OIDC sign-in replaces demo users (NEW)"]
+        domain["invoice-domain, plain Java 21<br/>ApprovalService (exists)<br/>+ PaymentSubmission (NEW)"]
+        disp["PayExDispatcher<br/>Spring @Scheduled, lease-based (NEW)"]:::planned
+        payexc["PayExClient<br/>Spring RestClient, pooled, idempotency key (NEW)"]:::planned
         recon["ReconciliationJob<br/>hourly in month-end window, else daily (NEW)"]:::planned
     end
 
@@ -93,23 +93,40 @@ sequenceDiagram
 
 | Part | Status | Hard dependency |
 | --- | --- | --- |
-| Azure SQL schema (`Invoices`, `PaymentOutbox`, `PaymentAttempts`, `ApprovalAudit`) | not started | migration tooling decision (I'd go with plain SQL migrations via DbUp rather than EF, see below) |
-| `IInvoiceRepository` SQL implementation with `rowversion` | not started | schema |
-| `ApprovalService` writing the outbox row in the same unit of work | not started | a small `IUnitOfWork` port in Domain, so the architecture test still passes |
-| `PayExDispatcher` hosted service | not started | PayEx answers the idempotency question (ADR-001, open question 1) |
-| `PayExClient` via `AddHttpClient` | not started | API key in Key Vault, not appsettings |
+| Azure SQL schema (`Invoices`, `PaymentOutbox`, `PaymentAttempts`, `ApprovalAudit`) | not started | Flyway migrations in `invoice-api` (plain SQL, see below) |
+| `InvoiceRepository` JDBC adapter (`JdbcClient`) with a `rowversion` check | not started | schema |
+| `ApprovalService` writing the outbox row in the same unit of work | not started | a small `UnitOfWork` port in `invoice-domain`, implemented in `invoice-api` with Spring's `TransactionTemplate`, so the ArchUnit rule still passes |
+| `PayExDispatcher` (`@Scheduled` + `SmartLifecycle` for a clean stop on shutdown) | not started | PayEx answers the idempotency question (ADR-001, open question 1) |
+| `PayExClient` on Spring `RestClient` over one shared, pooled JDK `HttpClient` (connect 5 s, read 25 s) | not started | API key in Key Vault, not `application.yml` |
 | Reconciliation job | not started | a PayEx "list payments by date" endpoint, to be confirmed |
 | Entra ID sign-in | not started | IT ticket for the app registration |
 | Service Bus | provisioned, unused | only if a second consumer of approval events appears |
 
 A few choices in that table are worth explaining.
 
-**DbUp over EF Core migrations.** The domain must stay free of storage code (that's what the architecture test enforces), and the outbox claim query uses `UPDLOCK, READPAST` hints. Hand-written SQL makes those visible in review. EF would generate the claim query for us, and that's exactly the query I want a reviewer to read line by line.
+**Flyway plus `JdbcClient`, not JPA/Hibernate.** The domain must stay free of storage code, which is what the ArchUnit rule enforces, so JPA annotations on `Invoice` are out anyway. And the outbox claim query uses `UPDLOCK, READPAST` hints. Hand-written SQL makes those visible in review. An ORM would generate the claim query for us, and that's exactly the query I want a reviewer to read line by line.
 
 **The idempotency key is `invoiceId:approvalVersion`, not just the invoice ID.** UC-2 (partial approval) is on the roadmap. Once an invoice can be partially approved and later topped up, the invoice ID alone stops being a unique payment instruction. The agent got this right during the 3 a.m. stress test, after initially suggesting the bare invoice ID.
+
+**One shared HTTP client, never one per call.** INC-2041 was a `new HttpClient()` per request. That's the .NET spelling, but `HttpClient.newHttpClient()` inside a Java method is the same bug. The client is a singleton bean, and the ArchUnit rule keeps it out of the domain.
 
 **The dispatcher runs inside the App Service instances, not as a separate Function.** At 80 approvals a minute peak, a separate compute unit costs more in moving parts than it saves. The lease column means three instances can run it safely. If it ever needs to scale independently, moving it out is a hosting change, not a design change.
 
 ## What stays the same
 
 The UI, the role model, and the Draft → PendingApproval → Approved/Rejected lifecycle stay as they are. The approval API keeps its route and response shape. The only visible difference for an approver is that the response now means "approved, payment queued" rather than "done". The UI should say so, because at month-end the payment can lag the approval by minutes.
+
+## If this ran on AWS instead
+
+The scenario fixes the platform as Azure, so the design above is written in Azure terms. Nothing in it depends on Azure, though. The domain module doesn't know which cloud it's on, and the adapter choices map one-to-one:
+
+| Concern | Azure (scenario) | AWS equivalent | What changes in code |
+| --- | --- | --- | --- |
+| Compute, 3 instances | App Service | ECS on Fargate behind an ALB, or EKS | nothing; it's the same Spring Boot jar in a container |
+| Relational store | Azure SQL | RDS / Aurora PostgreSQL | the claim query becomes `SELECT … FOR UPDATE SKIP LOCKED`, and `rowversion` becomes an integer `version` column. Both are Flyway migrations |
+| Secrets | Key Vault | Secrets Manager | the property source only |
+| Messaging, if ever needed | Service Bus topic | SNS topic + SQS queue per consumer | a publisher adapter. The outbox stays the source of truth on either cloud |
+| Sign-in | Entra ID | Cognito, or the corporate IdP over OIDC | Spring Security OAuth2 resource-server config |
+| Logs and metrics | Application Insights | CloudWatch / X-Ray via OpenTelemetry | exporter config only, if we instrument with OpenTelemetry from day one |
+
+A Quarkus host would work the same way: `invoice-domain` would be wired with a CDI producer instead of `DomainConfiguration`. That's the practical payoff of keeping framework annotations out of the domain.

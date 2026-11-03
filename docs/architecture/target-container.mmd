@@ -1,5 +1,5 @@
 %% Target container view once persistence and PayEx are in.
-%% Dashed borders (class "planned") = DOES NOT EXIST YET in the code.
+%% Dashed orange borders (class "planned") = DOES NOT EXIST YET in the code.
 flowchart LR
     user["Approver / Admin<br/>(browser)"]
     payex["PayEx API<br/>external, 30 s timeout"]:::external
@@ -7,10 +7,10 @@ flowchart LR
     subgraph app["Azure App Service — 3 instances"]
         direction TB
         ui["Static UI (exists)"]
-        api["API: controllers + auth (exists)<br/>Entra ID sign-in replaces demo users (NEW)"]
-        domain["InvoiceApp.Domain<br/>ApprovalService (exists)<br/>+ PaymentSubmission (NEW)"]
-        disp["PayExDispatcher<br/>BackgroundService, lease-based (NEW)"]:::planned
-        payexc["PayExClient<br/>typed HttpClient, idempotency key (NEW)"]:::planned
+        api["invoice-api: Spring Boot controllers + auth (exists)<br/>Entra ID / OIDC sign-in replaces demo users (NEW)"]
+        domain["invoice-domain, plain Java 21<br/>ApprovalService (exists)<br/>+ PaymentSubmission (NEW)"]
+        disp["PayExDispatcher<br/>Spring @Scheduled, lease-based (NEW)"]:::planned
+        payexc["PayExClient<br/>Spring RestClient, pooled, idempotency key (NEW)"]:::planned
         recon["ReconciliationJob<br/>hourly in month-end window, else daily (NEW)"]:::planned
     end
 
