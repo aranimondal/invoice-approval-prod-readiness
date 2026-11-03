@@ -23,5 +23,10 @@ jobs:
       - name: Compile
         run: ./mvnw -B -q -DskipTests install
 
+      # Structural rules get their own step so a violation is visible in the PR checks
+      # rather than buried in the unit-test count. See docs/architecture/as-built.md.
+      - name: Architecture rules (ArchUnit)
+        run: ./mvnw -B -pl invoice-domain test -Dtest=DomainArchitectureTest -Dsurefire.failIfNoSpecifiedTests=false
+
       - name: Unit and API contract tests
         run: ./mvnw -B verify

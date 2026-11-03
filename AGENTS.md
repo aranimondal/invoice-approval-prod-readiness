@@ -17,6 +17,7 @@ Invoice approval demo app: Java 21, Spring Boot 3 REST API with a small static w
 - Domain failures are exceptions from the domain (`InvoiceNotFoundException`, `InvalidInvoiceStateException`, `IllegalArgumentException`). `ApiExceptionHandler` maps them to 404, 409 and 400. Don't catch `Exception` anywhere in the web layer.
 - Every endpoint is behind sign-in (`SessionAuthFilter`). Restrict actions with `@RequireRole(...)`: destructive actions are Admin only, approvals are Approver or Admin.
 - Business rules go in `invoice-domain`, never in controllers. Domain classes carry no annotations; they're wired in `DomainConfiguration`.
+- The domain may depend only on `java.lang`, `java.util`, `java.math`, `java.time` and itself. `DomainArchitectureTest` (ArchUnit) enforces this. Need something else? Add a port in the domain and implement it in `invoice-api`.
 - Every new rule or endpoint needs tests. Use `FakeInvoiceRepository` for domain tests.
 - Use clear names; no one-letter variables or `flag` parameters.
 - End-to-end tests use page objects and role-based locators (`getByRole`, `getByLabel`), never CSS or XPath selectors.
@@ -24,6 +25,7 @@ Invoice approval demo app: Java 21, Spring Boot 3 REST API with a small static w
 ## Commands
 
 - Build and test everything: `./backend/mvnw -f backend/pom.xml verify`
+- Architecture rule only: `./backend/mvnw -f backend/pom.xml -pl invoice-domain test -Dtest=DomainArchitectureTest`
 - Run the app: `./backend/mvnw -f backend/pom.xml install -DskipTests` then `./backend/mvnw -f backend/pom.xml -pl invoice-api spring-boot:run`, and open http://localhost:5000
 - End-to-end tests: `cd e2e && npm install && npx playwright install chromium && npm test`
 
