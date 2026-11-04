@@ -3,7 +3,7 @@
 **Scope:** Maven dependencies and plugins in `backend/` and npm packages in `e2e/` for the Invoice Approval service.
 **Owner:** service owner. **Reviewed:** every quarter, or after any incident a dependency change contributed to.
 
-I picked dependency bumps over log triage or incident summaries because it's the workflow where an agent's output goes straight to production, and where we already have evidence of it going wrong. Release 2.15.1 shipped "four patch-level package upgrades" in the same release as the event-schema rename that caused INC-2047. Because of that bundling, the INC-2047 pack warns that "a rollback affects everything else in the release". The bumps themselves were probably fine. Bundling them with a feature change is what made the incident harder to get out of.
+**Why this workflow:** of the three on offer, it's the one where agent output goes straight to production, and we already have evidence of it going wrong. Release 2.15.1 bundled four package bumps with the schema rename that caused INC-2047, so rolling back the bumps meant rolling back everything.
 
 ## Levels
 
@@ -19,21 +19,21 @@ I picked dependency bumps over log triage or incident summaries because it's the
 
 | Task | Level today | Why |
 | --- | --- | --- |
-| Scan for outdated or vulnerable packages (`./backend/mvnw -f backend/pom.xml versions:display-dependency-updates`, OWASP `dependency-check`, `npm audit`) and post a weekly summary | L3 | Read-only, no production impact |
-| Patch bumps of test-only packages (`junit-jupiter`, `assertj-core`, `archunit-junit5`, `maven-surefire-plugin`, `@playwright/test`) | L2 | CI alone fully proves these. First candidate for L3 |
-| Patch bumps of runtime packages (the Spring Boot BOM, `com.azure:*` / `software.amazon.awssdk:*`, the JDBC driver) | L2 | Reach production. Need a reviewer who knows the runtime path |
-| Minor-version bumps of runtime packages | L2, reviewer must be one of the four engineers who've been on the codebase longest | Behaviour changes ship in minors more often than people expect |
-| Major bumps, or anything touching auth, serialization, HTTP client handling, or the SQL client | L1 | The agent writes the upgrade note and a human does the work. INC-2041 started with an HTTP client change |
-| Critical CVE fix during the month-end window | L1, and the incident commander decides | Fixing a CVE during freeze is a risk call, and a risk call isn't the agent's to make |
+| Weekly scan for outdated or vulnerable packages (Maven versions plugin, OWASP dependency-check, `npm audit`) | L3 | Read-only |
+| Patch bumps of test-only packages (JUnit, AssertJ, ArchUnit, Surefire, Playwright) | L2 | CI fully proves them. First candidate for L3 |
+| Patch bumps of runtime packages (Spring Boot BOM, cloud SDKs, JDBC driver) | L2 | They reach production |
+| Minor-version bumps of runtime packages | L2, reviewer from the four established engineers | Behaviour changes hide in minors |
+| Major bumps, or anything touching auth, serialization, the HTTP client or the SQL client | L1 | INC-2041 started with an HTTP client change |
+| Critical CVE fix inside the month-end window | L1; the incident commander decides | A risk call isn't the agent's to make |
 
 ## Controls that make those levels safe
 
-1. **One dependency family per PR, and nothing else in it.** A CI check fails the PR if it touches files other than `pom.xml` files, `.mvn/wrapper/maven-wrapper.properties`, `package.json` and `package-lock.json`. That's the direct lesson from 2.15.1.
-2. **The full pipeline is required:** build, unit, integration, the architecture test, secret scan, vulnerability scan, container scan and end-to-end. No skipped stages on bot PRs, even though the pipeline takes about 31 minutes (median of the last 20 runs, see the [baseline](../measurement/baseline-plan.md)).
-3. **The PR description is mandatory:** old → new version, a link to the release notes, any transitive packages that changed, and a one-line "what could break". If the agent can't fill one of these in, the PR stays a draft.
-4. **The agent's token is scoped to this repo.** It gets contents write on non-default branches and pull-request write. No `workflow` scope, so it can't edit CI, and no admin. Branch protection on `main` applies to the bot like anyone else.
-5. **Freeze windows.** No merges by the agent, at any level, from the third-last working day to the first working day of the next month. Bot PRs can open, but they wait.
-6. **Kill switch.** Anyone on the rota can turn off auto-merge for bot PRs, by repository variable, without asking.
+1. **One dependency family per PR, and nothing else in it.** A CI check fails the PR if it touches anything except build manifests (`pom.xml`, the Maven wrapper properties, `package*.json`). That's the direct lesson from 2.15.1.
+2. **The full pipeline is required:** every stage, including the architecture rule and the end-to-end tests, even though the pipeline takes about 31 minutes (see the [baseline](../measurement/baseline-plan.md)).
+3. **A mandatory PR description:** old → new version, release notes link, changed transitive dependencies, and "what could break". If any of these is missing, the PR stays a draft.
+4. **A narrow token:** scoped to this repo, with write access to branches and PRs only. No `workflow` scope (so it can't edit CI), no admin. Branch protection applies to the bot.
+5. **Month-end freeze:** the agent can't merge from the third-last working day to the first working day of the next month.
+6. **Kill switch:** anyone on the rota can turn off bot auto-merge with a repository variable, without asking.
 
 ## Evidence needed to move a task up a level
 
@@ -42,7 +42,7 @@ Going from L2 to L3 for one row of the table needs all of these, measured over a
 - at least 20 agent PRs in that row merged with no human change to the diff;
 - zero reverts, and zero incidents where the change was a contributing factor;
 - the PR description was accurate in every one of a sample of 10;
-- median time from PR opened to merged under 2 working days, so we know the reviewers are actually keeping up rather than rubber-stamping a backlog.
+- a median time from opening to merge under 2 working days. That shows reviewers are keeping up, not rubber-stamping a backlog.
 
 Going from L1 to L2 needs 5 consecutive upgrade notes that a human followed without finding anything the note missed.
 
@@ -52,4 +52,4 @@ Going from L1 to L2 needs 5 consecutive upgrade notes that a human followed with
 
 **The team runs at L2 at most, with the read-only scan at L3.**
 
-Two of the six engineers are new to the codebase. Over a six-week cycle, each will be the on-call engineer for one week, and possibly the one who has to judge whether a bump caused a 3 a.m. alert. L3 only makes sense if whoever is around can revert a bump confidently and tell it apart from everything else that changed. We don't have that yet. The other blocker is data: we have no history of agent PRs on this repo, so the L3 evidence above can't exist yet. I'd expect the test-only patch row to be the first to earn L3, around the end of the first quarter.
+Two of the six engineers are new to the codebase, and each will own a week of on-call. L3 is only safe when whoever's on call can confidently tell a bad bump apart from everything else that changed, and revert it. We aren't there yet. We also have no history of agent PRs, so the promotion evidence can't exist yet. I expect the test-only row to earn L3 first, around the end of the first quarter.
