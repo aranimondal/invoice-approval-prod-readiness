@@ -7,11 +7,11 @@
 
 ## Context
 
-The service code is a Java implementation of the workshop's Invoice Approval reference app. Its routes, JSON shape and web page are the same as the reference app's. The eval cases and evidence packs in `ops/` are the workshop's originals.
+The workshop's reference app is ASP.NET Core 8. I'm a Java engineer, not a .NET one. I could read the reference app with the agent's help, but I wouldn't own production code I can't debug on my own at 3 a.m. So I implemented the service in Java 21 and Spring Boot, the stack I can design, test and support properly. The routes, JSON shape and web page match the reference app, and `ApiContractTest` pins that contract. The eval cases and evidence packs in `ops/` are the workshop's originals.
 
-**Assumption, not in the brief:** the team that will own this service on the 24x7 rotation works in Java 21, Spring Boot and Quarkus. A tier-2 service with a payment integration needs to be in the stack the on-call engineers can read at 3 a.m. That matters most for the two engineers who are new to the codebase: making them new to the language as well doubles the risk.
+This is a deviation, and I'm stating it rather than burying it. What the brief assesses is design and judgement: where the boundaries sit, how a payment reaches PayEx exactly once, how much autonomy an agent gets, and whether the numbers were measured. None of that depends on the language. The layering is the same in any stack: a domain module with no framework and no I/O, and adapters around it for HTTP, persistence and PayEx. So are the concurrency analysis (a check-then-act race, fixed with optimistic locking), the outbox and lease design, and the failure modes. A .NET team could take ADR-001 and the target state as they stand.
 
-The counter-argument, in full: the brief names ASP.NET Core 8 on Azure App Service, and the eval diffs and incident packs are written against that stack. Choosing Java makes this submission harder to compare like for like with others. I accept that cost. Everything else the brief fixes (Azure, the evidence, the eval set) is kept exactly as given, so the comparison that matters, the decisions and the measurements, still holds.
+The counter-argument, in full: the brief wants everyone on the same codebase so that results can be compared, and the eval diffs and incident packs are written against the .NET stack. Choosing Java makes this submission harder to compare like for like. I accept that cost. Everything else the brief fixes (Azure, the evidence, the eval set) is kept exactly as given, so the comparison that matters, the decisions and the measurements, still holds.
 
 ## Decision
 
