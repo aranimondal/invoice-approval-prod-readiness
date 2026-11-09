@@ -2,7 +2,7 @@
 
 AI in SDLC workshop: Invoice Approval service, preparation for the tier-2 go-live.
 
-**Repository:** https://github.com/aranimondal/invoice-approval-prod-readiness/tree/main · **Demo video:** [OneDrive](https://nagarro-my.sharepoint.com/:v:/r/personal/arani_mondal_nagarro_com/Documents/Arani_3214638_invoice-approval-prod-readiness-main/Arani_3214638_invoice-approval-prod-readiness-main.mp4?d=wfe308cfd864e4057bddc1905bcad98a1&csf=1&web=1&nav=eyJyZWZlcnJhbEluZm8iOnsicmVmZXJyYWxBcHAiOiJPbmVEcml2ZUZvckJ1c2luZXNzIiwicmVmZXJyYWxBcHBQbGF0Zm9ybSI6IldlYiIsInJlZmVycmFsTW9kZSI6InZpZXciLCJyZWZlcnJhbFZpZXciOiJNeUZpbGVzTGlua0NvcHkifX0&e=rGv83C)
+**Repository:** https://github.com/aranimondal/invoice-approval-prod-readiness/tree/main · **Demo video:** [OneDrive](https://nagarro-my.sharepoint.com/:v:/p/arani_mondal/IQD9jDD-ToZXQL3cGQW8rZihAScXbo_tdEWJleTMQXtfZWQ?nav=eyJyZWZlcnJhbEluZm8iOnsicmVmZXJyYWxBcHAiOiJPbmVEcml2ZUZvckJ1c2luZXNzIiwicmVmZXJyYWxBcHBQbGF0Zm9ybSI6IldlYiIsInJlZmVycmFsTW9kZSI6InZpZXciLCJyZWZlcnJhbFZpZXciOiJNeUZpbGVzTGlua0NvcHkifX0&e=m7VXCO)
 
 | Hand-in item | File |
 | --- | --- |
@@ -14,7 +14,7 @@ AI in SDLC workshop: Invoice Approval service, preparation for the tier-2 go-liv
 | 5. Two added eval cases, and results for three runs plus the changed-variable run | [ops/evals/cases/case-11.diff](ops/evals/cases/case-11.diff), [case-12.diff](ops/evals/cases/case-12.diff), [ops/evals/RESULTS.md](ops/evals/RESULTS.md), [results.csv](ops/evals/results.csv), [answer-key.md](ops/evals/answer-key.md) |
 | 6. Risk audit, with the decision recorded | [docs/risk/lethal-trifecta-audit.md](docs/risk/lethal-trifecta-audit.md). Decision: **remove the exfiltration leg** |
 | 7. Measurement plan, with the two captured numbers | [docs/measurement/baseline-plan.md](docs/measurement/baseline-plan.md). Lead-time proxy (first PR CI run → main push) **57.3 h median, n = 6**; change failure rate **29–40%** |
-| 8. Demo video (8–10 min) | [Arani_3214638_invoice-approval-prod-readiness-main.mp4](https://nagarro-my.sharepoint.com/:v:/r/personal/arani_mondal_nagarro_com/Documents/Arani_3214638_invoice-approval-prod-readiness-main/Arani_3214638_invoice-approval-prod-readiness-main.mp4?d=wfe308cfd864e4057bddc1905bcad98a1&csf=1&web=1&nav=eyJyZWZlcnJhbEluZm8iOnsicmVmZXJyYWxBcHAiOiJPbmVEcml2ZUZvckJ1c2luZXNzIiwicmVmZXJyYWxBcHBQbGF0Zm9ybSI6IldlYiIsInJlZmVycmFsTW9kZSI6InZpZXciLCJyZWZlcnJhbFZpZXciOiJNeUZpbGVzTGlua0NvcHkifX0&e=rGv83C) (OneDrive) |
+| 8. Demo video (8–10 min) | [Arani_3214638_invoice-approval-prod-readiness-main.mp4](https://nagarro-my.sharepoint.com/:v:/p/arani_mondal/IQD9jDD-ToZXQL3cGQW8rZihAScXbo_tdEWJleTMQXtfZWQ?nav=eyJyZWZlcnJhbEluZm8iOnsicmVmZXJyYWxBcHAiOiJPbmVEcml2ZUZvckJ1c2luZXNzIiwicmVmZXJyYWxBcHBQbGF0Zm9ybSI6IldlYiIsInJlZmVycmFsTW9kZSI6InZpZXciLCJyZWZlcnJhbFZpZXciOiJNeUZpbGVzTGlua0NvcHkifX0&e=m7VXCO) (OneDrive) |
 | 9. AI augmentation log | [docs/ai-augmentation-log.md](docs/ai-augmentation-log.md) |
 
 ## How AI was used in this SDLC

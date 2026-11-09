@@ -4,7 +4,7 @@ A small invoice approval service, getting ready to go to production. It's Java 2
 
 > **Repository:** https://github.com/aranimondal/invoice-approval-prod-readiness/tree/main
 >
-> **Demo video:** [watch on OneDrive](https://nagarro-my.sharepoint.com/:v:/r/personal/arani_mondal_nagarro_com/Documents/Arani_3214638_invoice-approval-prod-readiness-main/Arani_3214638_invoice-approval-prod-readiness-main.mp4?d=wfe308cfd864e4057bddc1905bcad98a1&csf=1&web=1&nav=eyJyZWZlcnJhbEluZm8iOnsicmVmZXJyYWxBcHAiOiJPbmVEcml2ZUZvckJ1c2luZXNzIiwicmVmZXJyYWxBcHBQbGF0Zm9ybSI6IldlYiIsInJlZmVycmFsTW9kZSI6InZpZXciLCJyZWZlcnJhbFZpZXciOiJNeUZpbGVzTGlua0NvcHkifX0&e=rGv83C)
+> **Demo video:** [watch on OneDrive](https://nagarro-my.sharepoint.com/:v:/p/arani_mondal/IQD9jDD-ToZXQL3cGQW8rZihAScXbo_tdEWJleTMQXtfZWQ?nav=eyJyZWZlcnJhbEluZm8iOnsicmVmZXJyYWxBcHAiOiJPbmVEcml2ZUZvckJ1c2luZXNzIiwicmVmZXJyYWxBcHBQbGF0Zm9ybSI6IldlYiIsInJlZmVycmFsTW9kZSI6InZpZXciLCJyZWZlcnJhbFZpZXciOiJNeUZpbGVzTGlua0NvcHkifX0&e=m7VXCO)
 >
 > **Reviewers:** start with [SUBMISSION.md](SUBMISSION.md). It maps every hand-in item to a file. All the diagrams are in [docs/architecture](docs/architecture/README.md).
 
@@ -98,5 +98,5 @@ The domain module knows nothing about HTTP, SQL, Spring or the cloud it runs on.
 | 5 | Two new eval cases, and results for 3 runs plus the changed-variable run | [RESULTS](ops/evals/RESULTS.md), [cases](ops/evals/cases) |
 | 6 | Risk audit, with a recorded decision | [lethal-trifecta audit](docs/risk/lethal-trifecta-audit.md) |
 | 7 | Measurement plan, with the two captured numbers | [baseline plan](docs/measurement/baseline-plan.md) |
-| 8 | Demo video | [watch on OneDrive](https://nagarro-my.sharepoint.com/:v:/r/personal/arani_mondal_nagarro_com/Documents/Arani_3214638_invoice-approval-prod-readiness-main/Arani_3214638_invoice-approval-prod-readiness-main.mp4?d=wfe308cfd864e4057bddc1905bcad98a1&csf=1&web=1&nav=eyJyZWZlcnJhbEluZm8iOnsicmVmZXJyYWxBcHAiOiJPbmVEcml2ZUZvckJ1c2luZXNzIiwicmVmZXJyYWxBcHBQbGF0Zm9ybSI6IldlYiIsInJlZmVycmFsTW9kZSI6InZpZXciLCJyZWZlcnJhbFZpZXciOiJNeUZpbGVzTGlua0NvcHkifX0&e=rGv83C) |
+| 8 | Demo video | [watch on OneDrive](https://nagarro-my.sharepoint.com/:v:/p/arani_mondal/IQD9jDD-ToZXQL3cGQW8rZihAScXbo_tdEWJleTMQXtfZWQ?nav=eyJyZWZlcnJhbEluZm8iOnsicmVmZXJyYWxBcHAiOiJPbmVEcml2ZUZvckJ1c2luZXNzIiwicmVmZXJyYWxBcHBQbGF0Zm9ybSI6IldlYiIsInJlZmVycmFsTW9kZSI6InZpZXciLCJyZWZlcnJhbFZpZXciOiJNeUZpbGVzTGlua0NvcHkifX0&e=m7VXCO) |
 | 9 | AI augmentation log | [log](docs/ai-augmentation-log.md) |
