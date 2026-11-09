@@ -15,6 +15,7 @@ public class ApprovalService {
 
     private final InvoiceRepository repository;
     private final Clock clock;
+    private final java.net.http.HttpClient payEx = java.net.http.HttpClient.newHttpClient(); // TEMP: rule violation on purpose
 
     public ApprovalService(InvoiceRepository repository) {
         this(repository, Clock.systemUTC());
